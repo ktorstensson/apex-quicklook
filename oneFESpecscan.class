@@ -1,0 +1,396 @@
+! oneFESpecscan SCISCAN <CALSCAN>
+! Display a quick look of an on/off scan for a single frontend,
+! with optional calibration scan.
+! ktorsten@eso.org
+
+sic message class a-ir
+on error continue
+set var base
+set var cal
+set align f c
+set nomatch
+
+def int sciscan calscan freqint startnum sbwidth
+
+define structure febe
+def char*5 febe%fe
+def char*12 febe%lsbX[2] febe%usbX[2] febe%lsbY[2] febe%usbY[2]
+def real febe%trxscale[2] febe%IFfreq[2]
+def int febe%sbwidth febe%pol
+
+def char*7 tmpgrp  ! Used for group average of sideband
+
+def real calnopos[2] scannopos[2] smMHz yfactor
+
+let calnopos 23.5 20.5
+let scannopos  1 20.5
+let smMHz 1
+let yfactor 10
+
+! Define plot position variables for backend groups
+def structure lsbX usbX lsbY usbY
+def real lsbX%telpos[4] lsbX%trxpos[4] lsbX%tsyspos[4] lsbX%calwin[4] lsbX%specwin[4]
+def real usbX%telpos[4] usbX%trxpos[4] usbX%tsyspos[4] usbX%calwin[4] usbX%specwin[4]
+def real lsbY%telpos[4] lsbY%trxpos[4] lsbY%tsyspos[4] lsbY%calwin[4] lsbY%specwin[4]
+def real usbY%telpos[4] usbY%trxpos[4] usbY%tsyspos[4] usbY%calwin[4] usbY%specwin[4]
+
+! Used to estimate rms in respective sideband
+def real lsbX%rms usbX%rms lsbY%rms usbY%rms lsbX%tsys usbX%tsys lsbY%tsys usbY%tsys
+
+! Assign plot position variables for backend groups x/y in cm.
+let lsbX%telpos 10.5 16.5 3.0 16.5
+let lsbX%trxpos 9 16 2.5 16
+let lsbX%tsyspos 11.5 16 5 16
+let lsbX%calwin 2 14.5 17 19.5
+let lsbX%specwin 2 14.5 11 15.5
+let usbX%telpos 16.8 16.5 24 16.5
+let usbX%trxpos 16 16 22.5 16
+let usbX%tsyspos 18.5 16 25 16
+let usbX%calwin 15.5 28 17 19.5
+let usbX%specwin 15.5 28 11 15.5
+let lsbY%telpos 10.5 7 3.0 7
+let lsbY%trxpos 9 6.5 2.5 6.5
+let lsbY%tsyspos 11.5 6.5 5 6.5
+let lsbY%calwin 2 14.5 7.5 10
+let lsbY%specwin 2 14.5 1.5 6
+let usbY%telpos 16.8 7 24 7 
+let usbY%trxpos 16 6.5 22.5 6.5
+let usbY%tsyspos 18.5 6.5 25 6.5
+let usbY%calwin 15.5 28 7.5 10
+let usbY%specwin 15.5 28 1.5 6
+
+
+clear
+
+if (PRO%NARG.gt.1) then
+  let sciscan &1
+  let calscan &2
+else
+  let sciscan &1
+  let calscan 0
+endif
+
+if (calscan.ne.0) then
+  oneFECalscan 'calscan'
+  sic message class a-ir
+else
+  cl    
+  say "No calibraition scan submitted"
+  draw text 12 19 "No calibraition scan submitted,"
+  draw text 11 18.5 "hopefully a new will come along shortly" 
+endif
+
+find /scan 'sciscan'
+get f
+let startnum number
+let febe%fe 'telescope'
+
+if febe%fe.eq."AP-N2"  ! NFLASH230
+  let febe%pol 2
+  let febe%sbwidth 8
+  let febe%lsbX "AP-N201-F101" "AP-N201-F103"
+  let febe%usbX "AP-N203-F102" "AP-N203-F104"
+  let febe%lsbY "AP-N202-F101" "AP-N202-F103"
+  let febe%usbY "AP-N204-F102" "AP-N204-F104"
+  let febe%trxscale 30 130
+  let febe%IFfreq 1830 6090
+
+else if febe%fe.eq."AP-N4"  ! NFLASH460
+  let febe%pol 2
+  let febe%sbwidth 4
+  let febe%lsbX "AP-N401-F101" "AP-N401-F103"
+  let febe%usbX "AP-N403-F102" "AP-N403-F104"
+  let febe%lsbY "AP-N402-F101" "AP-N402-F103"
+  let febe%usbY "AP-N404-F102" "AP-N404-F104"
+  let febe%trxscale 70 200
+  let febe%IFfreq 1830 2170  ! 6090
+
+else if febe%fe.eq."AP-S1"  ! SEPIA180
+  let febe%pol 2
+  let febe%sbwidth 4
+  let febe%lsbX "AP-S101-F101" ""  ! "AP-S101-F101" ""  ! Guess of 2020 names
+  let febe%usbX "AP-S103-F103" ""  ! "AP-S103-F102" ""
+  let febe%lsbY "AP-S102-F102" ""  ! "AP-S102-F101" ""
+  let febe%usbY "AP-S104-F104" ""  ! "AP-S104-F102" ""
+  let febe%trxscale 30 100
+  let febe%IFfreq 1830 2170
+
+else if febe%fe.eq."AP-S3"  ! SEPIA345
+  let febe%pol 2
+  let febe%sbwidth 8
+  let febe%lsbX "AP-S301-F101" "AP-S301-F103"
+  let febe%usbX "AP-S303-F102" "AP-S303-F104"
+  let febe%lsbY "AP-S302-F101" "AP-S302-F103"
+  let febe%usbY "AP-S304-F102" "AP-S304-F104"
+  let febe%trxscale 50 200
+  let febe%IFfreq 1830 6090
+
+else if febe%fe.eq."AP-S6"  ! SEPIA660
+  let febe%pol 2
+  let febe%sbwidth 8
+  let febe%lsbX "AP-S601-F101" "AP-S601-F105"  ! "AP-S601-F101" "AP-S601-F103"  ! Guess of 2020 names
+  let febe%usbX "AP-S603-F103" "AP-S603-F107"  ! "AP-S603-F102" "AP-S603-F104"
+  let febe%lsbY "AP-S602-F102" "AP-S602-F106"  ! "AP-S602-F101" "AP-S602-F103"
+  let febe%usbY "AP-S604-F104" "AP-S604-F108"  ! "AP-S604-F102" "AP-S604-F104"
+  let febe%trxscale 150 400
+  let febe%IFfreq 1830 6090
+
+else if febe%fe.eq."AP-P2"  ! PI230 (single pol)
+  let febe%pol 1
+  let febe%sbwidth 8
+  let febe%lsbX "AP-P202-F401" "AP-P202-F403"
+  let febe%usbX "AP-P204-F402" "AP-P204-F404"
+  let febe%trxscale 30 140
+  let febe%IFfreq 2000 5800
+endif
+
+
+
+set character 0.6
+pen 3
+draw text scannopos[1] scannopos[2] "SCAN: "'sciscan'
+pen 1
+draw text 10.3 20.5 'SOURCE'
+set char 0.4
+pen /def
+
+! --- Figure out if we have sbwidth 4 or 8
+find /scan 'sciscan' /telescope 'febe%lsbX[2]'
+if found.gt.0
+  let sbwidth 8
+else
+  let sbwidth 4
+endif
+
+
+def int flag_center_start flag_center_end
+
+
+! --- Calculate sigma in LSB and USB from first subscans
+find /scan 'sciscan' /number startnum startnum+sbwidth-1 /telescope 'febe%lsbX[1]' 
+get f
+let tmpgrp 'telescope'
+find /scan 'sciscan' /number startnum startnum+sbwidth-1 /telescope 'tmpgrp'*
+ave /res /nocheck
+resample * * * smMHz f
+extract 0.01*channels 0.99*channels c
+if febe%sbwidth.eq.8
+  let flag_center_start channels/2-120
+  let flag_center_end channels/2+120
+  let ry[flag_center_start:flag_center_end] -999
+endif
+compute lsbX%rms rms ry /blanking -999
+
+find /scan 'sciscan' /number startnum startnum+sbwidth-1 /telescope 'febe%usbX[1]' 
+get f
+let tmpgrp 'telescope'
+find /scan 'sciscan' /number startnum startnum+sbwidth-1 /telescope 'tmpgrp'*
+ave /res /nocheck
+resample * * * smMHz f
+extract 0.01*channels 0.99*channels c
+if febe%sbwidth.eq.8
+  let flag_center_start channels/2-120
+  let flag_center_end channels/2+120
+  let ry[flag_center_start:flag_center_end] -999
+endif
+compute usbX%rms rms ry /blanking -999
+
+
+! --- LSB Pol X ---
+set mode y -yfactor*lsbX%rms yfactor*lsbX%rms
+greg1\set box_location lsbX%specwin[1] lsbX%specwin[2] lsbX%specwin[3] lsbX%specwin[4]
+fin /scan 'sciscan' /telescop 'febe%lsbX[1]' 
+get l
+set mode x frequency-febe%IFfreq[2] frequency+febe%IFfreq[1]
+pen 3
+draw text lsbX%trxpos[1] lsbX%trxpos[2] " T\DR\DX: "'nint(TREC)'" K"
+draw text lsbX%tsyspos[1] lsbX%tsyspos[2] "T\DS\DY\DS: "'nint(TSYS)'" K"
+pen /def
+resample * * * smMHz f
+spec /pen 2
+
+label "T\DA* (K)" /y 4
+box n o i n
+let tmpgrp 'telescope'
+
+if febe%sbwidth.eq.8
+  fin /scan 'sciscan' /telescop 'febe%lsbX[2]' 
+  if found.gt.0
+    get l
+    pen 3
+    draw text lsbX%trxpos[3] lsbX%trxpos[4] " T\DR\DX: "'nint(TREC)'" K"
+    draw text lsbX%tsyspos[3] lsbX%tsyspos[4] "T\DS\DY\DS: "'nint(TSYS)'" K"
+    pen /def
+    resample * * * smMHz f
+    spec /pen 1
+  else
+    draw text 5.125 13.25 "NOT CONNECTED" 5
+  endif
+endif
+
+find /scan 'sciscan' /telescope 'tmpgrp'*
+ave /res /nocheck
+resample * * * smMHz f
+spec
+
+! --- USB Pol X ---
+set mode y -yfactor*usbX%rms yfactor*usbX%rms
+greg1\set box_location usbX%specwin[1] usbX%specwin[2] usbX%specwin[3] usbX%specwin[4]
+fin /scan 'sciscan' /telescop 'febe%usbX[1]' 
+get l
+set mode x frequency-febe%IFfreq[1] frequency+febe%IFfreq[2]
+pen 3
+draw text usbX%trxpos[1] usbX%trxpos[2] " T\DR\DX: "'nint(TREC)'" K"
+draw text usbX%tsyspos[1] usbX%tsyspos[2] "T\DS\DY\DS: "'nint(TSYS)'" K"
+pen /def
+resample * * * smMHz f
+spec /pen 2
+
+box n o i n
+let tmpgrp 'telescope'
+
+if febe%sbwidth.eq.8
+  fin /scan 'sciscan' /telescop 'febe%usbX[2]' 
+  if found.gt.0
+    get l
+    pen 3
+    draw text usbX%trxpos[3] usbX%trxpos[4] " T\DR\DX: "'nint(TREC)'" K"
+    draw text usbX%tsyspos[3] usbX%tsyspos[4] "T\DS\DY\DS: "'nint(TSYS)'" K"
+    pen /def
+    resample * * * smMHz f
+    spec /pen 1
+  else
+    draw text 24.875 13.25 "NOT CONNECTED" 5
+  endif
+endif
+
+find /scan 'sciscan' /telescope 'tmpgrp'*
+ave /res /nocheck
+resample * * * smMHz f
+spec
+
+
+if febe%pol.gt.1
+  ! --- LSB Pol Y ---
+  set mode y -yfactor*lsbX%rms yfactor*lsbX%rms
+  greg1\set box_location lsbY%specwin[1] lsbY%specwin[2] lsbY%specwin[3] lsbY%specwin[4]
+  fin /scan 'sciscan' /telescop 'febe%lsbY[1]' 
+  get l
+  set mode x frequency-febe%IFfreq[2] frequency+febe%IFfreq[1]
+  pen 3
+  draw text lsbY%trxpos[1] lsbY%trxpos[2] " T\DR\DX: "'nint(TREC)'" K"
+  draw text lsbY%tsyspos[1] lsbY%tsyspos[2] "T\DS\DY\DS: "'nint(TSYS)'" K"
+  pen /def
+  resample * * * smMHz f
+  spec /pen 2
+  
+  label "T\DA* (K)" /y 4
+  box p o i n
+  let tmpgrp 'telescope'
+  
+  if febe%sbwidth.eq.8
+    fin /scan 'sciscan' /telescop 'febe%lsbY[2]' 
+    if found.gt.0
+      get l
+      pen 3
+      draw text lsbY%trxpos[3] lsbY%trxpos[4] " T\DR\DX: "'nint(TREC)'" K"
+      draw text lsbY%tsyspos[3] lsbY%tsyspos[4] "T\DS\DY\DS: "'nint(TSYS)'" K"
+      pen /def
+      resample * * * smMHz f
+      spec /pen 1
+    else
+      draw text 5.125 3.75 "NOT CONNECTED" 5
+    endif
+  endif
+  
+  find /scan 'sciscan' /telescope 'tmpgrp'*
+  ave /res /nocheck
+  resample * * * smMHz f
+  spec
+  
+  
+  ! --- USB Pol Y ---
+  set mode y -yfactor*usbX%rms yfactor*usbX%rms
+  greg1\set box_location usbY%specwin[1] usbY%specwin[2] usbY%specwin[3] usbY%specwin[4]
+  fin /scan 'sciscan' /telescop 'febe%usbY[1]' 
+  get l
+  set mode x frequency-febe%IFfreq[1] frequency+febe%IFfreq[2]
+  pen 3
+  draw text usbY%trxpos[1] usbY%trxpos[2] " T\DR\DX: "'nint(TREC)'" K"
+  draw text usbY%tsyspos[1] usbY%tsyspos[2] "T\DS\DY\DS: "'nint(TSYS)'" K"
+  pen /def
+  resample * * * smMHz f
+  spec /pen 2
+  
+  box p o i n
+  let tmpgrp 'telescope'
+  
+  if febe%sbwidth.eq.8
+    fin /scan 'sciscan' /telescop 'febe%usbY[2]' 
+    if found.gt.0
+      get l
+      pen 3
+      draw text usbY%trxpos[3] usbY%trxpos[4] " T\DR\DX: "'nint(TREC)'" K"
+      draw text usbY%tsyspos[3] usbY%tsyspos[4] "T\DS\DY\DS: "'nint(TSYS)'" K"
+      pen /def
+      resample * * * smMHz f
+      spec /pen 1
+    else
+      draw text 24.875 3.75 "NOT CONNECTED" 5
+    endif
+  endif
+  
+  find /scan 'sciscan' /telescope 'tmpgrp'*
+  ave /res /nocheck
+  resample * * * smMHz f
+  spec
+endif
+
+if calscan.eq.0
+  set char 0.6
+  pen 1
+  draw text 15.3 20.5 'LINE'
+  pen /def
+  set char 0.5
+  draw text 14.4 16.6 "Pol X"
+  set char 0.4
+  fin /scan 'sciscan' /telescop 'febe%lsbX[1]'
+  get l
+  draw text lsbX%telpos[1] lsbX%telpos[2] 'TELESCOPE'
+  fin /scan 'sciscan' /telescop 'febe%usbX[1]'
+  get l
+  draw text usbX%telpos[1] usbX%telpos[2] 'TELESCOPE'
+  if febe%pol.gt.1
+    set char 0.5
+    draw text 14.4 7.1 "Pol Y"
+    set char 0.4
+    fin /scan 'sciscan' /telescop 'febe%lsbY[1]'
+    get l
+    draw text lsbY%telpos[1] lsbY%telpos[2] 'TELESCOPE'
+    fin /scan 'sciscan' /telescop 'febe%usbY[1]'
+    get l
+    draw text usbY%telpos[1] usbY%telpos[2] 'TELESCOPE'
+  endif
+  if febe%sbwidth.eq.8
+    fin /scan 'sciscan' /telescop 'febe%lsbX[2]'
+    if found.gt.0
+      get l
+      draw text lsbX%telpos[3] lsbX%telpos[4] 'TELESCOPE'
+      fin /scan 'sciscan' /telescop 'febe%usbX[2]'
+      get l
+      draw text usbX%telpos[3] usbX%telpos[4] 'TELESCOPE'
+      if febe%pol.gt.1
+        fin /scan 'sciscan' /telescop 'febe%lsbY[2]'
+        get l
+        draw text lsbY%telpos[3] lsbY%telpos[4] 'TELESCOPE'
+        fin /scan 'sciscan' /telescop 'febe%usbY[2]'
+        get l
+        draw text usbY%telpos[3] usbY%telpos[4] 'TELESCOPE'
+      endif
+    endif
+  endif
+endif
+
+set char 0.6
+
+sic message class a+ir

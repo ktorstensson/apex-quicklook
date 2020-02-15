@@ -1,0 +1,32 @@
+! quicklook.class SCAN <CALSCAN>
+! Wrapper for the APEX offline quicklook display of a science or calibration scan.
+! ktorsten@eso.org
+
+def char*4 mysource
+
+if (pro%narg.eq.0).or.(pro%narg.gt.2)
+  say "   Usage: "
+  say "   LAS> ql SCAN"
+  say "   LAS> ql SCISCAN <CALSCAN>"
+else if pro%narg.eq.1
+  find /scan &1 /source trec*
+  if found.gt.0
+    oneFECalscan &1
+  else
+    find /scan &1
+    if found.eq.0 return
+    get f
+    if time.gt.2
+      oneFESpecscan &1
+    else
+      say "This looks like an OTF, not supported yet."
+    endif
+  endif
+else if pro%narg.eq.2
+  oneFESpecscan &1 &2
+endif
+
+say " "
+say "   To save the plot e.g."
+say "   LAS> ha ql_'scan'.png /dev png crop /fitpage /geo 1200 840 /over"
+say " "
