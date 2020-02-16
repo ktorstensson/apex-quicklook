@@ -1,0 +1,129 @@
+! qlv4.class
+! set default
+
+on error continue
+quiet
+
+!del /var proj proj_before newaccount
+
+define character*20 proj /global
+define character*20 proj_before /global
+!define character*20 Dtime /global
+!define character*20 Dtime_before /global
+define character*100 infile /global
+define character*100 infile_old /global
+define character*10 shefiFe /global
+
+def int newinfile /global
+def int lastscan calscan sciscan
+def char*4 issky frontend
+def char*5  frontend1
+
+let sciscan 0
+let calscan 0
+
+def int startup
+let startup 0
+
+@openFilev2
+find update
+
+for i 1 to 10000
+  @openFilev2
+
+  if (startup.eq.1)
+     say "----------------------------- "
+     say "Just started..."
+     say 'infile'
+     sys date
+     sic\sic wait 1
+     fin update
+     get last
+     let startup 0
+  else
+     say "----------------------------- "
+     say 'infile' 
+     sys date
+     say "Awaiting new data..." 
+!     say "EXIT and restart for new project and/or UT date!"
+     new
+     sic\sic wait 1
+     find new_dat
+     get l  ! l
+  endif 
+    
+  let issky 'SOURCE'
+  let frontend 'TELESCOPE'
+  let frontend1 'TELESCOPE'
+
+! =====  LASMA345 =====
+  say 'frontend1'
+  if (frontend1.eq."AP-L3") then         
+    set character 0.4
+    say " --- LASMA345! ---" 
+    if (issky.eq."SKY-") then          ! What type of scan is it            
+      let calscan SCAN
+      say "SKY-scans waiting for rest of calibration cycle"
+	    	    
+    else if (issky.eq."HOT-") then
+      let calscan SCAN
+      say "HOT-scans waiting for rest of calibration cycle"
+	
+    else if (issky.eq."TREC") then	
+      let calscan SCAN
+      ! sic\sic wait 1
+      ! sepia660Calscan 'calscan'
+
+    else
+      let sciscan scan
+      say " Looks like some kind of LASMA data"
+      lasma345scan 'sciscan'
+    endif    
+    set character 0.4
+  ! endif                                ! End LASMA345  
+
+  else
+  ! =====  oneFE =====
+    set character 0.4
+    say " --- oneFE ---" 
+    if (issky.eq."SKY-") then          ! What type of scan is it            
+      let calscan SCAN
+      say "SKY-scans waiting for rest of calibration cycle"
+	    	    
+    else if (issky.eq."HOT-") then
+      let calscan SCAN
+      say "HOT-scans waiting for rest of calibration cycle"
+	
+    else if (issky.eq."TREC") then	
+      let calscan SCAN
+      sic\sic wait 1
+      oneFECalscan 'calscan'
+
+    else if (time.lt.2) then
+      let sciscan scan
+      say " Looks like an OTF"
+      oneFEOTFscan 'sciscan'
+
+    else 
+      let sciscan SCAN  
+      say scanNum 'sciscan'  
+      if (calscan.ne.0)
+        oneFESpecscan 'sciscan' 'calscan'
+      else
+        find /source trec*  /frequency frequency /telescope 'telescope'
+          if (found.eq.0) then
+           oneFESpecscan 'sciscan'
+          else
+            get last
+            let calscan 'SCAN'
+            oneFESpecscan 'sciscan' 'calscan'
+ 
+          endif
+      endif    
+    endif                              ! End of scan type
+    set character 0.4
+  endif                                ! End NOVA660  
+
+  hardcopy /overwrite /device png /geo 1600 1120
+  python copyPlot.py
+  next  
