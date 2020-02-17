@@ -155,7 +155,7 @@ else
   find /source trec* /telescope 'febe%lsbX[1]' /scan sciscan-3
   if found.eq.0
     say "No calibraition scan submitted"
-    draw text 12 19 "No calibraition scan submitted,"
+    draw text 12 19 "No calibration scan submitted,"
     draw text 11 18.5 "hopefully a new will come along shortly"
     let calscan 0
   else
