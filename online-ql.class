@@ -68,8 +68,12 @@ for i 1 to 10000
     else if (issky.eq."HOT-") then
       let calscan SCAN
       say "HOT-scans waiting for rest of calibration cycle"
+
+    else if (issky.eq."COLD") then
+      let calscan SCAN
+      say "COLD-scans waiting for rest of calibration cycle"
 	
-    else if (issky.eq."TREC") then	
+    else if (issky.eq."TREC").or.(issky.eq."TAUI").or.(issky.eq."TAUS").or.(issky.eq."TCAL").or.(issky.eq."TSYS") then	
       let calscan SCAN
       ! sic\sic wait 1
       ! sepia660Calscan 'calscan'
@@ -93,8 +97,12 @@ for i 1 to 10000
     else if (issky.eq."HOT-") then
       let calscan SCAN
       say "HOT-scans waiting for rest of calibration cycle"
+
+    else if (issky.eq."COLD") then
+      let calscan SCAN
+      say "COLD-scans waiting for rest of calibration cycle"
 	
-    else if (issky.eq."TREC") then	
+    else if (issky.eq."TREC").or.(issky.eq."TAUI").or.(issky.eq."TAUS").or.(issky.eq."TCAL").or.(issky.eq."TSYS") then	
       let calscan SCAN
       sic\sic wait 1
       oneFECalscan 'calscan'
