@@ -68,7 +68,7 @@ if febe%fe.eq."AP-N2"  ! NFLASH230
   let febe%usbX "AP-N203-F102" "AP-N203-F104"
   let febe%lsbY "AP-N202-F101" "AP-N202-F103"
   let febe%usbY "AP-N204-F102" "AP-N204-F104"
-  let febe%trxscale 30 130
+  let febe%trxscale 30 120
   let febe%IFfreq 1830 6090  ! 2170
 
 else if febe%fe.eq."AP-N4"  ! NFLASH460
@@ -78,16 +78,24 @@ else if febe%fe.eq."AP-N4"  ! NFLASH460
   let febe%usbX "AP-N403-F102" "AP-N403-F104"
   let febe%lsbY "AP-N402-F101" "AP-N402-F103"
   let febe%usbY "AP-N404-F102" "AP-N404-F104"
-  let febe%trxscale 70 200
+!  let febe%lsbX "AP-N401-F101"
+!  let febe%usbX "AP-N403-F102"
+!  let febe%lsbY "AP-N402-F101"
+!  let febe%usbY "AP-N404-F102"
+  let febe%trxscale 70 300
   let febe%IFfreq 1830 2170  ! 6090
 
 else if febe%fe.eq."AP-S1"  ! SEPIA180
   let febe%pol 2
   let febe%sbwidth 4
-  let febe%lsbX "AP-S101-F101" ""  ! "AP-S101-F101" ""  ! Guess of 2020 names
-  let febe%usbX "AP-S103-F103" ""  ! "AP-S103-F102" ""
-  let febe%lsbY "AP-S102-F102" ""  ! "AP-S102-F101" ""
-  let febe%usbY "AP-S104-F104" ""  ! "AP-S104-F102" ""
+!   let febe%lsbX "AP-S101-F101" ""  ! "AP-S101-F101" ""  ! Guess of 2020 names
+!   let febe%usbX "AP-S103-F103" ""  ! "AP-S103-F102" ""
+!   let febe%lsbY "AP-S102-F102" ""  ! "AP-S102-F101" ""
+!   let febe%usbY "AP-S104-F104" ""  ! "AP-S104-F102" ""
+  let febe%lsbX "AP-S101-F101" ""  ! Guess of 2020 names
+  let febe%usbX "AP-S103-F102" ""
+  let febe%lsbY "AP-S102-F101" ""
+  let febe%usbY "AP-S104-F102" ""
   let febe%trxscale 30 100
   let febe%IFfreq 1830 2170
 
@@ -98,16 +106,20 @@ else if febe%fe.eq."AP-S3"  ! SEPIA345
   let febe%usbX "AP-S303-F102" "AP-S303-F104"
   let febe%lsbY "AP-S302-F101" "AP-S302-F103"
   let febe%usbY "AP-S304-F102" "AP-S304-F104"
-  let febe%trxscale 50 200
+  let febe%trxscale 50 400
   let febe%IFfreq 1830 6090
 
 else if febe%fe.eq."AP-S6"  ! SEPIA660
   let febe%pol 2
   let febe%sbwidth 8
-  let febe%lsbX "AP-S601-F101" "AP-S601-F105"  ! "AP-S601-F101" "AP-S601-F103"  ! Guess of 2020 names
-  let febe%usbX "AP-S603-F103" "AP-S603-F107"  ! "AP-S603-F102" "AP-S603-F104"
-  let febe%lsbY "AP-S602-F102" "AP-S602-F106"  ! "AP-S602-F101" "AP-S602-F103"
-  let febe%usbY "AP-S604-F104" "AP-S604-F108"  ! "AP-S604-F102" "AP-S604-F104"
+  ! let febe%lsbX "AP-S601-F101" "AP-S601-F105"  ! "AP-S601-F101" "AP-S601-F103"  ! Guess of 2020 names
+  ! let febe%usbX "AP-S603-F103" "AP-S603-F107"  ! "AP-S603-F102" "AP-S603-F104"
+  ! let febe%lsbY "AP-S602-F102" "AP-S602-F106"  ! "AP-S602-F101" "AP-S602-F103"
+  ! let febe%usbY "AP-S604-F104" "AP-S604-F108"  ! "AP-S604-F102" "AP-S604-F104"
+  let febe%lsbX "AP-S601-F101" "AP-S601-F103"  ! Guess of 2020 names
+  let febe%usbX "AP-S603-F102" "AP-S603-F104"
+  let febe%lsbY "AP-S602-F101" "AP-S602-F103"
+  let febe%usbY "AP-S604-F102" "AP-S604-F104"
   let febe%trxscale 150 400
   let febe%IFfreq 1830 6090
 
