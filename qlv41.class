@@ -1,0 +1,329 @@
+! qlv4.class
+! set default
+
+on error continue
+quiet
+
+!del /var proj proj_before newaccount
+
+define character*20 proj /global
+define character*20 proj_before /global
+!define character*20 Dtime /global
+!define character*20 Dtime_before /global
+define character*100 infile /global
+define character*100 infile_old /global
+define character*10 shefiFe /global
+
+def int newinfile /global
+def int lastscan calscan sciscan
+def char*4 issky frontend
+def char*5  frontend1
+
+let sciscan 0
+let calscan 0
+
+def int startup
+let startup 0
+
+@openFilev2
+find update
+
+for i 1 to 10000
+  @openFilev2
+
+  if (startup.eq.1)
+     say "----------------------------- "
+     say "Just started..."
+     say 'infile'
+     sys date
+     sic\sic wait 1
+     fin update
+     get last
+     let startup 0
+  else
+     say "----------------------------- "
+     say 'infile' 
+     sys date
+     say "Awaiting new data..." 
+!     say "EXIT and restart for new project and/or UT date!"
+     if file("gregplot.png") then
+        new
+        sic\sic wait 1
+        find new_dat
+     endif
+     get last
+  endif 
+    
+  let issky 'SOURCE'
+  let frontend 'TELESCOPE'
+  let frontend1 'TELESCOPE'
+
+
+! =====  SHeFI =====
+    
+  if (frontend.eq."AP-H") then         ! Begin SHeFI
+    set character 0.6
+    
+     if (frontend1.eq."AP-H2") then 
+     let shefiFe "HET230"
+     endif
+     if (frontend1.eq."AP-H3") then 
+     let shefiFe "HET345"
+     endif
+     if (frontend1.eq."AP-H4") then 
+     let shefiFe "HET460"
+     endif
+     say 'shefiFe'	
+    if (issky.eq."SKY-") then          ! What type of scan is it            
+      let calscan SCAN
+      say "SKY-scans waiting for rest of calibration cycle"
+	    	    
+    else if (issky.eq."HOT-") then
+      let calscan SCAN
+      say "HOT-scans waiting for rest of calibration cycle"
+	
+    else if (issky.eq."TREC") then
+      say "TREC-scans, plotting calibration scan"    	
+      let calscan SCAN
+      sic\sic wait 1
+      find update
+      shefiCalscan 'calscan'
+
+    else if (time.lt.2) then
+      let sciscan scan
+      say " Looks like an OTF"
+      shefiOTFscan 'sciscan'
+
+    else 
+      let sciscan SCAN    
+      if (calscan.ne.0)
+        shefiSpecscan 'sciscan' 'calscan'
+       ! @/homes/software/gildas/apex/shefiSpecscan-mysql.class 'sciscan' 'calscan' 'shefiFe'
+	    
+      else
+        find /source trec* /frequency frequency
+        if (found.eq.0) then
+          shefiSpecscan 'sciscan'
+	  ! @/homes/software/gildas/apex/shefiSpecscan-mysql.class 'sciscan' 'calscan' 'shefiFe'
+
+        else 
+          get last
+          let calscan SCAN
+	  say 'sciscan' 'calscan' 'shefiFe'
+          ! @/homes/software/gildas/apex/shefiSpecscan-mysql.class 'sciscan' 'calscan' 'shefiFe'
+        endif  
+      endif    
+    endif                              ! End of scan type
+  endif                                ! End SHeFIs  
+
+
+! =====  SEPIA180 =====
+
+  if (frontend1.eq."AP-S1") then         
+    set character 0.4
+    say " --- SEPIA! ---" 
+    if (issky.eq."SKY-") then          ! What type of scan is it            
+      let calscan SCAN
+      say "SKY-scans waiting for rest of calibration cycle"
+	    	    
+    else if (issky.eq."HOT-") then
+      let calscan SCAN
+      say "HOT-scans waiting for rest of calibration cycle"
+	
+    else if (issky.eq."TREC") then	
+      let calscan SCAN
+      sic\sic wait 1
+      sepia180Calscan 'calscan'
+
+    else if (time.lt.2) then
+      let sciscan scan
+      say " Looks like an OTF"
+      say " sepiaOTFscan 'sciscan'"
+      !list
+      !exa found
+      !sic\sic wait 20
+      sepia180OTFscan 'sciscan'
+
+    else 
+      let sciscan SCAN    
+      if (calscan.ne.0)
+        ! say "sepiaSpecscan "'sciscan'" "'calscan'
+        sepia180Specscan 'sciscan' 'calscan'
+        !@/homes/software/gildas/apex/sepiaSpecscan-mysql.class 'sciscan' 'calscan' GARD180
+
+      else
+        find /source trec*  /frequency frequency
+          if (found.eq.0) then
+           ! say "sepiaSpecscan "'sciscan' 
+           sepia180Specscan 'sciscan'
+          else
+            get last
+            let calscan SCAN
+            ! say "sepiaSpecscan "'sciscan'" "'calscan'
+            sepia180Specscan 'sciscan' 'calscan'
+	    !@/homes/software/gildas/apex/sepiaSpecscan-mysql.class 'sciscan' 'calscan' GARD180
+
+          endif
+      endif    
+    endif                              ! End of scan type
+    set character 0.4
+  endif                                ! End SEPIA
+
+! =====  FLASH =====
+
+  if (frontend.eq."AP-F") then         
+    set character 0.4
+    say " --- FLASH! ---" 
+    if (issky.eq."SKY-") then          ! What type of scan is it            
+      let calscan SCAN
+      say "SKY-scans waiting for rest of calibration cycle"
+	    	    
+    else if (issky.eq."HOT-") then
+      let calscan SCAN
+      say "HOT-scans waiting for rest of calibration cycle"
+	
+    else if (issky.eq."TREC") then	
+      let calscan SCAN
+      sic\sic wait 1
+      say " flashCalscan "'calscan'
+      flashCalscan 'calscan'
+
+    else if (time.lt.2) then
+      let sciscan scan
+      say " Looks like an OTF"
+      say " flashOTFscan "'sciscan'
+      !list
+      !exa found
+      sic\sic wait 20
+      flashOTFscan 'sciscan'
+
+    else 
+      let sciscan SCAN    
+      if (calscan.ne.0)
+        say "flashSpecscan "'sciscan'" "'calscan'
+        flashSpecscan 'sciscan' 'calscan'
+        ! @/homes/software/gildas/apex/flashSpecscan-mysql.class 'sciscan' 'calscan' FLASH345
+      else
+        find /source trec*  /frequency frequency
+          if (found.eq.0) then
+           say "flashSpecscan "'sciscan' 
+           flashSpecscan 'sciscan'
+          else
+            get last
+            let calscan SCAN
+            say "flashSpecscan "'sciscan'" "'calscan'
+            flashSpecscan 'sciscan' 'calscan'
+	    ! @/homes/software/gildas/apex/flashSpecscan-mysql.class 'sciscan' 'calscan' FLASH345
+
+          endif
+      endif    
+    endif                              ! End of scan type
+    set character 0.4
+  endif                                ! End FLASH
+
+! =====  PI230 =====
+
+  if (frontend.eq."AP-P") then         
+    set character 0.4
+    say " --- PI230! ---" 
+    if (issky.eq."SKY-") then          ! What type of scan is it            
+      let calscan SCAN
+      say "SKY-scans waiting for rest of calibration cycle"
+	    	    
+    else if (issky.eq."HOT-") then
+      let calscan SCAN
+      say "HOT-scans waiting for rest of calibration cycle"
+	
+    else if (issky.eq."TREC") then	
+      let calscan SCAN
+      sic\sic wait 1
+      say " pi230Calscan "'calscan'
+      pi230Calscan 'calscan'
+
+    else if (time.lt.2) then
+      let sciscan scan
+      say " Looks like an OTF"
+      say " pi230OTFscan "'sciscan'
+      !list
+      !exa found
+      sic\sic wait 20
+      pi230OTFscan 'sciscan'
+
+    else 
+      let sciscan SCAN    
+      if (calscan.ne.0)
+        say "pi230Specscan "'sciscan'" "'calscan'
+        pi230Specscan 'sciscan' 'calscan'
+        ! @/homes/software/gildas/apex/pi230Specscan-mysql.class 'sciscan' 'calscan' PI230
+      else
+        find /source trec*  /frequency frequency
+          if (found.eq.0) then
+           say "pi230Specscan "'sciscan' 
+           pi230Specscan 'sciscan'
+          else
+            get last
+            let calscan SCAN
+            say "pi230Specscan "'sciscan'" "'calscan'
+            pi230Specscan 'sciscan' 'calscan'
+	    ! @/homes/software/gildas/apex/pi230Specscan-mysql.class 'sciscan' 'calscan' PI230
+
+
+          endif
+      endif    
+    endif                              ! End of scan type
+    set character 0.4
+  endif                                ! End pi230
+! =====  SEPIA660 =====
+  say 'frontend'
+  if (frontend1.eq."AP-S6") then         
+    set character 0.4
+    say " --- NOVA660! ---" 
+    if (issky.eq."SKY-") then          ! What type of scan is it            
+      let calscan SCAN
+      say "SKY-scans waiting for rest of calibration cycle"
+	    	    
+    else if (issky.eq."HOT-") then
+      let calscan SCAN
+      say "HOT-scans waiting for rest of calibration cycle"
+	
+    else if (issky.eq."TREC") then	
+      let calscan SCAN
+      sic\sic wait 1
+      sepia660Calscan 'calscan'
+
+    else if (time.lt.2) then
+      let sciscan scan
+      say " Looks like an OTF"
+      say " nova660OTFscan 'sciscan'"
+      sepia660OTFscan 'sciscan'
+
+    else 
+      let sciscan SCAN  
+      say scanNum 'sciscan'  
+      if (calscan.ne.0)
+        ! say "nova660Specscan "'sciscan'" "'calscan'
+        sepia660Specscan 'sciscan' 'calscan'
+        ! @/homes/software/gildas/apex/sepiaSpecscan-mysql2.class 'sciscan' 'calscan' NOVA660
+
+      else
+        find /source trec*  /frequency frequency
+          if (found.eq.0) then
+           ! say "nova660Specscan "'sciscan' 
+           sepia660Specscan 'sciscan'
+          else
+            get last
+            let calscan SCAN
+            ! say "nova660Specscan "'sciscan'" "'calscan'
+            sepia660Specscan 'sciscan' 'calscan'
+           ! @/homes/software/gildas/apex/sepiaSpecscan-mysql2.class 'sciscan' 'calscan' NOVA660
+ 
+          endif
+      endif    
+    endif                              ! End of scan type
+    set character 0.4
+  endif                                ! End NOVA660  
+
+  hardcopy /overwrite /device png /geo 1600 1120
+  python copyPlot.py
+
+  next  
