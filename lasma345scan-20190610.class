@@ -1,0 +1,37 @@
+set unit f f
+set win -300 300
+clear
+if pro%narg.eq.0
+  say " you need to give a scan number"
+  return
+endif
+
+set var cal
+set var base
+
+get f
+
+
+say '&1', 'number', AP-L308-F402
+
+find /scan &1 /number 'number' * /source 'source' /telescop AP-L308-F402
+
+if found.gt.0
+  ave /nocheck pos
+  extract nint(0.04*channels) nint(0.96*channels) c
+  resample * * * 0.5 v
+  base 1
+  set mode y -10*sigfi 10*sigfi
+  pl
+  sw
+  resample * * * 20 v
+  base 
+  spec /pen 1
+  get l
+  set char 0.8
+  draw text 5 16 "0.5km/s" 6
+  draw text 15 16 "20km/s" 5 /pen 1
+  draw text 25 16 "Trec [K]: "'nint(trec)' 4 /pen 3
+  set char 0.6
+endif
+
